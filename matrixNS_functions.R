@@ -48,8 +48,27 @@ Covmat <- list(
 
 SparsityLev = function(A){
   nonzerocount <- function(x) {
-  return (sum(x != 0))
+  return (sum(abs(x) > 10^(-10)))
   }
   s1 <- apply(A, 1, nonzerocount)
   return(max(s1))
 }
+
+matrixrowsel <- function(X,a,lam){
+  lassofit <- glmnet(y = X[,a],x = X[,-a], alpha = 1, lambda = lam)
+  lassocoef <- coef(lassofit)
+  nonzero <- which(lassocoef[-1] != 0)
+  return(nonzero)
+}
+
+matrixrowNS <- function(X,lam){
+  a<-1:nrow(X)
+  sapply(a,FUN=matrixrowsel,X=X,lam=lam)
+}
+
+matrixrowsel(mtcars,1,1)
+X<-mtcars
+a<-1
+lam<-1
+a<-1:ncol(X)
+
