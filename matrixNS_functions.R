@@ -54,21 +54,54 @@ SparsityLev = function(A){
   return(max(s1))
 }
 
+
 matrixrowsel <- function(X,a,lam){
-  lassofit <- glmnet(y = X[,a],x = X[,-a], alpha = 1, lambda = lam)
+  lassofit <- glmnet(x = X[-a,], y = X[a,], alpha = 1, lambda = lam)
   lassocoef <- coef(lassofit)
   nonzero <- which(lassocoef[-1] != 0)
   return(nonzero)
 }
 
-matrixrowNS <- function(X,lam){
-  a<-1:nrow(X)
-  sapply(a,FUN=matrixrowsel,X=X,lam=lam)
+## Find the index of columns which are correlated to a-th column of X (penalty= lam)
+matrixcolsel <- function(X,a,lam){
+  lassofit <- glmnet(x = X[,-a], y = X[,a], alpha = 1, lambda = lam)
+  lassocoef <- coef(lassofit)
+  nonzero <- which(lassocoef[-1] != 0)
+  nonzero <- ifelse(nonzero >= a, nonzero+1, nonzero)
+  return(nonzero)
 }
 
+
+matrixcolNS <- function(X,lam){
+  a <- 1:ncol(X)
+  graph <- sapply(a, function(a) matrixcolsel(X, a, lam))
+  cor_and <- diag(ncol(X))
+  cor_or <- diag(ncol(X))
+  for(i in 1:ncol(X)){
+    for(j in 1:ncol(X)){
+      if(j %in% graph[[i]] && i %in% graph[[j]]){
+        cor_and[i,j] <- 1
+        cor_and[j,i] <- 1
+      }
+      if (j %in% graph[[i]] || i %in% graph[[j]]){
+        cor_or[i,j] <- 1
+        cor_or[j,i] <- 1
+      }
+    }
+  }
+  return(list(and=cor_and, or=cor_or))
+}
+matrixcolNS(mtcars,2)
+
+matrixrowNS(mtcars)
+
 matrixrowsel(mtcars,1,1)
+matrixrowsel(X,a[4],lam)
+sapply(a, function(a) matrixcolsel(X, a, lam))
+matrixcolsel(X,4,lam)
+
 X<-mtcars
-a<-1
+a<-3
 lam<-1
 a<-1:ncol(X)
 
